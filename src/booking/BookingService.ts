@@ -5,26 +5,33 @@ import Booking from "./Booking";
 import BookingAPI from "./BookingAPI";
 
 export default class BookingService {
-    public getTripsByUser(user: User): Booking[] {
+    public getTripsByUser(user: User): Booking[] | Error {
         let bookingList: Booking[] = [];
-        const loggedUser: User = UserSession.getLoggedUser();
-        let isFriend: boolean = false;
 
-        if (loggedUser != null) {
-            for (const friend of user.getFriends()) {
-                if (friend === loggedUser) {
-                    isFriend = true;
-                    break;
+        try {
+            const loggedUser: User | null = UserSession.getLoggedUser();
+
+            if (loggedUser != null) {
+                let isFriend: boolean = false;
+
+                for (const friend of user.getFriends()) {
+                    if (friend === loggedUser) {
+                        isFriend = true;
+                        break;
+                    }
                 }
-            }
 
-            if (isFriend) {
-                bookingList = BookingAPI.findBookingsByUser(user);
+                if (isFriend) {
+                    bookingList = BookingAPI.findBookingsByUser(user);
+                    return bookingList;
+                }
+                
+                throw new Error("Unauthorised: Users are not friends");
+            } else {
+                throw new UserNotLoggedInException();
             }
-
-            return bookingList;
-        } else {
-            throw new UserNotLoggedInException();
+        } catch (error) {
+            throw error;
         }
     }
 }
